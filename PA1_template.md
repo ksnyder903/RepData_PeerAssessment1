@@ -17,29 +17,23 @@ This document contains the markdown for my submission to Coursera's Reproducible
 
 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.path='Figs/',
-                      echo=FALSE, warning=FALSE, message=FALSE)
-```
+
 
 Load all our required libraries.
-```{r libraries, message=FALSE, warning = FALSE}
 
-library(dplyr) #data manipulation
-library(ggplot2) #graphs
-library(knitr) #kable function
-
-
-```
 
   
 ## Loading and preprocessing the data
 
 Load in our data using the read.csv function. This assumes the data is already in your working directory.
-```{r loaddata}
-act = read.csv("activity.csv")
-kable(head(act,5))
-```
+
+ steps  date          interval
+------  -----------  ---------
+    NA  2012-10-01           0
+    NA  2012-10-01           5
+    NA  2012-10-01          10
+    NA  2012-10-01          15
+    NA  2012-10-01          20
 
 ***
 
@@ -53,14 +47,7 @@ kable(head(act,5))
   
   You can see that with a number of values missing (we'll get to the exact number of rows in a bit!), there are a quite a few days below 10,000 total steps. The 10,000 to 14,999 step bucket is our most frequent, which makes some sense - many fitness trackers set a default goal of 10,000 steps per day.
 
-```{r histtot}
-totsteps = act %>% group_by(date) %>% summarize(totsteps = sum(steps, na.rm = TRUE))
-
-#create the histogram
-ggplot(totsteps,aes(totsteps)) + 
-  geom_histogram(binwidth = 5000, color = "white") + 
-  labs(x = "Total Number of Steps per Day", y = "Count of Days", title = "Frequency of Total Daily Steps")
-```
+![](Figs/histtot-1.png)<!-- -->
 
 ***
 
@@ -68,12 +55,9 @@ ggplot(totsteps,aes(totsteps)) +
 
 Since we already have a summarized data frame with the total steps per day, we'll just use that to calculate the mean and median.
 
-```{r meanmedian}
-mn = mean(totsteps$totsteps)
-mdn = median(totsteps$totsteps)
-```
 
-The **mean** of total daily steps is **`r toString(round(mn,2))`** and the **median** is **`r toString(mdn)`**.
+
+The **mean** of total daily steps is **9354.23** and the **median** is **10395**.
 
 ***
 
@@ -87,24 +71,17 @@ The **mean** of total daily steps is **`r toString(round(mn,2))`** and the **med
   
   After our table is generated, we can use ggplot's geom_line to create the line plot specified by the instructions. From 0 to 500 minutes, there is not a lot of step activity - makes sense, most folks are asleep then! Around minute 800 we see a very large peak - around 1:30PM. Very interesting!
 
-```{r lineplot}
-int = act %>% group_by(interval) %>% summarize(avgsteps = mean(steps, na.rm = TRUE))
-
-ggplot(int,aes(x = interval, y= avgsteps)) + 
-  geom_line()+ 
-  labs(x = "5-Minute Time Interval", y = "Average Steps", title = "Average Steps per 5-Minute Time Interval")
-```
+![](Figs/lineplot-1.png)<!-- -->
 
 ***
 
 ### 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-```{r maxsteps}
-max.int = int %>% filter(avgsteps == max(avgsteps))
 
-kable(max.int)
-```
+ interval   avgsteps
+---------  ---------
+      835   206.1698
 
-The 5-minute interval **`r toString(max.int$interval)`** has the highest average steps, at **`r toString(round(max.int$avgsteps,2))`**.
+The 5-minute interval **835** has the highest average steps, at **206.17**.
 
 ***
 
@@ -116,13 +93,9 @@ The 5-minute interval **`r toString(max.int$interval)`** has the highest average
   
   We'll do this using a combination of the nrow function (counts the rows), dyplr's maggittr (pipe) and filter (does what it says it does), and finally, the is.na function. We'll use dplyr to filter the dataframe to just the rows where one of our columns is missing, and nrow to count those rows.
 
-```{r nummiss}
-row.na = nrow(act %>% filter(is.na(steps)))
-row.na.interval = nrow(act %>% filter(is.na(interval)))
-row.na.date= nrow(act %>% filter(is.na(date)))
-```
 
-There are `r toString(row.na)` rows with missing steps, `r toString(row.na.interval)` rows with missing intervals, and `r toString(row.na.date)` with missing dates. 
+
+There are 2304 rows with missing steps, 0 rows with missing intervals, and 0 with missing dates. 
 
 ***
 
@@ -134,14 +107,14 @@ There are `r toString(row.na)` rows with missing steps, `r toString(row.na.inter
   
   In order to replace the values, I'm actually using the dataframe I created for my Average Steps per 5-Minute Time Interval plot above. I use the left_join function from dplyr to join the summarized table to our raw data by the interval field. Then, I create a new column to make sure I can double check my work - it's filled with an ifelse statement that checks if the raw step count is NA, replaces it with the average if that is the case. If not, it uses the raw step count as the field's value. Finally, I'm renaming the new step count to the old field name and selecting just that field, the date, and the time interval.
 
-```{r imputedata}
-new.act = act %>% 
-  left_join(int, by = "interval") %>% 
-  mutate(new.steps = ifelse(is.na(steps), round(avgsteps), steps)) %>% 
-  select(steps = new.steps, date, interval)
 
-kable(head(new.act,5))
-```
+ steps  date          interval
+------  -----------  ---------
+     2  2012-10-01           0
+     0  2012-10-01           5
+     0  2012-10-01          10
+     0  2012-10-01          15
+     0  2012-10-01          20
 
 ***
 
@@ -155,32 +128,18 @@ kable(head(new.act,5))
   
   The instructions also ask for a calculation of the mean and median for the newest data set, which you'll find below the graph. I've also included a comparison against the non-imputed dataset to quantify the impact of the imputation.
 
-```{r imputetable}
-#first create the summary table with the new dataset
-totsteps.new = new.act %>% group_by(date) %>% summarize(totsteps = sum(steps, na.rm = TRUE))
-```
 
-```{r imputeplot}
-#combine our "old" and "new" summary tables so we can view the change side by side using the faceting function of ggplot
-totsteps.all = 
-      bind_rows(
-      totsteps %>% mutate(type = " Missing Data"),
-      totsteps.new %>% mutate(type = "Imputed Missing Data")
-      )
 
-ggplot(totsteps.all,aes(totsteps)) + 
-  geom_histogram(binwidth = 5000, color = "white") + 
-  labs(x = "Total Number of Steps per Day", y = "Count of Days", title = "Frequency of Total Daily Steps - Missing versus Imputed Data")+ 
-  facet_grid(.~type)
-```
+![](Figs/imputeplot-1.png)<!-- -->
        
  
 There is an increase of 1,411 in average steps and 367 median steps comparing the imputed data to the original data.
 
-```{r compmeans}
-comp = totsteps.all %>% group_by(type) %>% summarize(mean = mean(totsteps), median = median(totsteps)) 
-kable(comp)
-```
+
+type                        mean   median
+---------------------  ---------  -------
+Missing Data             9354.23    10395
+Imputed Missing Data    10765.64    10762
 ***
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -189,13 +148,7 @@ kable(comp)
 
 Our first step here is to convert the date variable to a date type - previously it was character. Next, we'll use the weekdays function to identify the day of the week for all of our dates, and create an ifelse forumla that assigns "weekend" to Saturdays and Sundays, and "weekdays" to all other days. Our final step is to make that daytype a factor and limit our dataset to just the fields we need. 
 
-```{r createweekday}
-weekdays = 
-new.act %>% mutate(date = as.Date(date),
-  weekdays = weekdays(date), 
-  daytype = as.factor(ifelse(weekdays == "Saturday" | weekdays == "Sunday", "weekend", "weekday"))) %>% 
-  select(steps,date,interval, daytype)
-```
+
 
 ### Make a panel plot containing a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
@@ -206,14 +159,7 @@ new.act %>% mutate(date = as.Date(date),
   Once we've built our plot, we can see the weekend days show a very different pattern than the weekdays! The weekdays show a large peak in the first half of the day, and activity tapers from there. Activity on the weekends is shifted a little later in the day, and is smoother throughout - no large individual peaks.
 
   
-```{r weekdayplot}
-week.avg = weekdays %>% group_by(daytype, interval) %>% summarize(avgsteps = mean(steps))
-
-ggplot(week.avg,aes(x = interval, y= avgsteps)) + 
-  geom_line()+ 
-  labs(x = "5-Minute Time Interval", y = "Average Steps", title = "Average Steps per 5-Minute Time Interval") +
-  facet_grid(.~daytype)
-```
+![](Figs/weekdayplot-1.png)<!-- -->
 
 
 
