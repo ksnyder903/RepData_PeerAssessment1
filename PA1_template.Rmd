@@ -18,8 +18,8 @@ This document contains the markdown for my submission to Coursera's Reproducible
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.path='Figs/',
-                      echo=FALSE, warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(echo = TRUE, fig.path='figure/',
+                       warning=FALSE, message=FALSE, cache=TRUE)
 ```
 
 Load all our required libraries.
